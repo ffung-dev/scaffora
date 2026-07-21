@@ -2,8 +2,12 @@
 import cv2
 import numpy as np
 from pathlib import Path
-raw_folder = Path('../data/raw')
-processed_folder = Path('../data/processed')
+
+
+project_root = Path(__file__).resolve().parent.parent
+
+raw_folder = project_root / "data" / "raw"
+processed_folder = project_root / "data" / "processed"
 
 def edit_image(image_path):
 
@@ -51,8 +55,8 @@ for morphology in raw_folder.iterdir(): # each type of branching
         edited_image = edit_image(image_path)
         mask = threshold(edited_image)
         mask = largest_comp(mask)
-        cv2.imwrite(output_folder, mask)
-    
+        output_path = output_folder / image_path.name
+        cv2.imwrite(str(output_path), mask)    
 
 
 
