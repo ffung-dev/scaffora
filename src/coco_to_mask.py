@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import cv2
 import numpy as np
+from pycocotools import mask as maskUtils
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 roboflow_folder = PROJECT_ROOT / "data" / "masks_roboflow"
@@ -19,7 +20,7 @@ for morphology_folder in roboflow_folder.iterdir():
     with open(input_folder / '_annotations.coco.json', 'r') as file:
         coco = json.load(file)
     images = {}
-    for image in coco['image']:
+    for image in coco['images']:
         images[image['id']] = image
     for image_id, image_info in images.items():
         height = image_info['height']
@@ -30,12 +31,21 @@ for morphology_folder in roboflow_folder.iterdir():
         for ann in coco['annotations']:
             if ann['image_id'] != image_id:
                 continue
+            seg = ann['segmentation']
+            if not seg:
+                continue
 
-            for polygon in ann['segmentation']:
-                points = np.array(polygon).reshape(-1,2)
-                points = points.astype(np.int32)
+            if isinstance(seg, dict):
+                # rle format: {'counts': ..., 'size':[h,w]}
+                rle_mask = maskUtils.decode(seg) # shape (h,w) values 0/1
+                mask = np.maximum(mask, rle_mask * 255)
+            else:
+                # polygon format: list [x1,y1,x2,y2,...]
+                for polygon in seg:
+                    points = np.array(polygon).reshape(-1,2)
+                    points = points.astype(np.int32)
 
-                cv2.fillPoly(mask, [points], 255)
+                    cv2.fillPoly(mask, [points], 255)
 
         filename = Path(image_info['file_name']).stem + '.png'
         cv2.imwrite(str(output_folder / filename), mask)
