@@ -15,6 +15,7 @@ for morphology_folder in roboflow_folder.iterdir():
 
     input_folder = morphology_folder / 'train'
     output_folder = mask_folder / morphology_folder.name 
+    output_folder.mkdir(parents=True, exist_ok=True)
 
     # from coco -> mask
     with open(input_folder / '_annotations.coco.json', 'r') as file:
